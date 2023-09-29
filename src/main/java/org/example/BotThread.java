@@ -31,11 +31,14 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText();
-            if (message.startsWith("/start")) start(update);
-            else if (message.startsWith("/register")) register(update);
-            else if (message.startsWith("/emails")) emails(update);
+        if (update.hasMessage()) {
+            if (update.getMessage().hasText()) {
+                String message = update.getMessage().getText();
+                if (message.startsWith("/start")) start(update);
+                else if (message.startsWith("/register")) register(update);
+                else if (message.startsWith("/emails")) emails(update);
+            }
+            deleteMessage(update.getMessage().getFrom().getId(), update.getMessage().getMessageId());
             return;
         }
         if (update.hasCallbackQuery()) {
