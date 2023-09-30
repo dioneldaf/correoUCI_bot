@@ -24,7 +24,9 @@ public class WebWork {
         selectInput.setSelectedIndex(Const.THIRD_ELEMENT);
         HtmlSubmitInput submitButton = form.getFirstByXPath(
                 "//input[@class='ZLoginButton DwtButton']");
-        return submitButton.click();
+        HtmlPage page = submitButton.click();
+        if (page.getElementById("ZLoginErrorPanel") != null) throw new IllegalArgumentException();
+        return page;
     }
 
     public static ArrayList<HtmlTableRow> getHtmlMessages(HtmlPage page) throws IOException {

@@ -53,16 +53,16 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         if (userInList == null) {
             botUsers.add(user);
             userInList = user;
-            text = "Hola :)\n";
-            text = text.concat("🧐  Introduzca los datos de su cuenta con el siguiente comando" +
+            text = "Hola :)\n\n";
+            text = text.concat("🧐  Introduzca los datos de su cuenta con el siguiente comando " +
                     "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
         } else {
-            text = "Hola otra vez ;)\n";
+            text = "Hola otra vez ;)\n\n";
             text = text.concat("☝🤓  Si desea cambiar" +
                     " los datos de su cuenta use el siguiente comando (sin comillas):\n" +
                     "/register \"nombre de usuario\" \"contraseña\"");
         }
-        text = text.concat("\n🤔  Ejemplo:\n/register luispg alf@321X*");
+        text = text.concat("\n\n🤔  Ejemplo:\n/register luispg alf@321X*");
         sendMessage(text, userInList);
     }
 
@@ -78,7 +78,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             String text = "🔴  Parámetros inválidos\n\n";
             text = text.concat("☝🤓  Introduzca los datos de su cuenta con el siguiente comando" +
                     "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
-            text = text.concat("\n🤔  Ejemplo:\n/register luispg alf@321X*");
+            text = text.concat("\n\n🤔  Ejemplo:\n/register luispg alf@321X*");
             sendMessage(text, userInList);
             return;
         }
@@ -86,12 +86,14 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         userInList.setPassword(texts[2]);
         sendMessage("""
                 ✅  Datos registrados exitosamente!!
+                
                 ☝🤓  Para ver la información de tus correos usa el siguiente comando (sin comillas):
                 /emails "C"
                 
                 """ +
                 "🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
-                "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.", userInList);
+                "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.\n\n" +
+                "🤔  Ejemplo:\n/emails 12", userInList);
     }
 
     private void emails(Update update) {
@@ -111,9 +113,9 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         }
         String[] texts = update.getMessage().getText().split(" ", 2);
         if (texts.length != 2) {
-            String text = "🔴  Parámetros inválidos";
+            String text = "🔴  Parámetros inválidos\n\n";
             text = text.concat("🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
-                    "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.");
+                    "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.\n");
             text = text.concat("\n🤔  Ejemplo:\n/emails 12");
             sendMessage(text, userInList);
             return;
@@ -124,20 +126,23 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             if (C <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
             if (!texts[1].toLowerCase().contains("all")) {
-                String text = "🔴 Parámetros inválidos";
+                String text = "🔴 Parámetros inválidos\n\n";
                 text = text.concat("🔄 Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
-                        "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.");
+                        "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.\n");
                 text = text.concat("\n🤔  Ejemplo:\n/emails 12");
                 sendMessage(text, userInList);
                 return;
             }
             C = -1;
         }
+        sendMessage("💬  Cargando"
+                + (C == -1 ? " todos los" : (" los últimos " + C))
+                + " mensajes... Esto puede tardar 1 minuto :)", userInList);
         try {
-            sendMessage("💬  Cargando"
-                    + (C == -1 ? " todos los" : (" los últimos " + C))
-                    + " mensajes... Esto puede tardar 1 minuto :)", userInList);
             userInList.refreshEmails();
+        } catch (IllegalArgumentException e) {
+            sendMessage("Credenciales inválidos", userInList);
+            return;
         } catch (Exception e) {
             error(e, userInList);
             return;
@@ -173,6 +178,9 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         String text;
         try {
             text = WebWork.getCompleteText(url, emailUrl, username, password);
+        } catch (IllegalArgumentException e) {
+            sendMessage("Credenciales inválidos", userInList);
+            return;
         } catch (Exception e) {
             error(e, userInList);
             return;
