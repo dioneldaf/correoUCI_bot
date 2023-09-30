@@ -54,14 +54,15 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             botUsers.add(user);
             userInList = user;
             text = "Hola :)\n";
-            text = text.concat("Introduzca los datos de su cuenta con el siguiente comando" +
+            text = text.concat("🧐  Introduzca los datos de su cuenta con el siguiente comando" +
                     "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
         } else {
             text = "Hola otra vez ;)\n";
-            text = text.concat("Si desea cambiar" +
+            text = text.concat("☝🤓  Si desea cambiar" +
                     " los datos de su cuenta use el siguiente comando (sin comillas):\n" +
                     "/register \"nombre de usuario\" \"contraseña\"");
         }
+        text = text.concat("\n🤔  Ejemplo:\n/register luispg alf@321X*");
         sendMessage(text, userInList);
     }
 
@@ -74,18 +75,22 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         }
         String[] texts = update.getMessage().getText().split(" ", 3);
         if (texts.length != 3) {
-            sendMessage("Parámetros inválidos", userInList);
+            String text = "🔴  Parámetros inválidos\n\n";
+            text = text.concat("☝🤓  Introduzca los datos de su cuenta con el siguiente comando" +
+                    "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
+            text = text.concat("\n🤔  Ejemplo:\n/register luispg alf@321X*");
+            sendMessage(text, userInList);
             return;
         }
         userInList.setUsername(texts[1]);
         userInList.setPassword(texts[2]);
         sendMessage("""
-                Datos registrados exitosamente!!
-                Para ver la información de tus correos usa el siguiente comando (sin comillas):
+                ✅  Datos registrados exitosamente!!
+                ☝🤓  Para ver la información de tus correos usa el siguiente comando (sin comillas):
                 /emails "C"
                 
                 """ +
-                "Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
+                "🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
                 "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.", userInList);
     }
 
@@ -97,16 +102,20 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             return;
         }
         if (userInList.getUsername() == null || userInList.getPassword() == null) {
-            String text = "Usted aun no ha registrado sus datos de " +
+            String text = "🙄  Usted aun no ha registrado sus datos de " +
                     "inicio de sesión\n";
-            text = text.concat("\nIntroduzca los datos de su cuenta con el siguiente comando (sin comillas): " +
+            text = text.concat("\n☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas): " +
                     "/register \"nombre de usuario\" \"contraseña\"");
             sendMessage(text, userInList);
             return;
         }
         String[] texts = update.getMessage().getText().split(" ", 2);
         if (texts.length != 2) {
-            sendMessage("Parámetros inválidos", userInList);
+            String text = "🔴  Parámetros inválidos";
+            text = text.concat("🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
+                    "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.");
+            text = text.concat("\n🤔  Ejemplo:\n/emails 12");
+            sendMessage(text, userInList);
             return;
         }
         int C;
@@ -115,13 +124,17 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             if (C <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
             if (!texts[1].toLowerCase().contains("all")) {
-                sendMessage("Parámetros inválidos", userInList);
+                String text = "🔴 Parámetros inválidos";
+                text = text.concat("🔄 Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
+                        "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.");
+                text = text.concat("\n🤔  Ejemplo:\n/emails 12");
+                sendMessage(text, userInList);
                 return;
             }
             C = -1;
         }
         try {
-            sendMessage("Cargando"
+            sendMessage("💬  Cargando"
                     + (C == -1 ? " todos los" : (" los últimos " + C))
                     + " mensajes... Esto puede tardar 1 minuto :)", userInList);
             userInList.refreshEmails();
@@ -274,7 +287,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
     }
 
     private void error(Exception e, BotUser user) {
-        sendMessage("Ocurrió el siguiente error:\n" +
+        sendMessage("😵  Ocurrió el siguiente error:\n" +
                 Arrays.toString(e.getStackTrace()), user.getTelegramId());
         String text = "Usuario: " + user.getUsername();
         text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
@@ -283,7 +296,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
     }
 
     private void error(Exception e, Long chatID) {
-        sendMessage("Ocurrió el siguiente error:\n" +
+        sendMessage("😵  Ocurrió el siguiente error:\n" +
                 e.getMessage(), chatID);
         String text = "Usuario: " + chatID;
         text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
