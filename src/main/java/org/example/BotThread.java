@@ -48,26 +48,26 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
 
     private void start(Update update) {
         BotUser user = new BotUser(update.getMessage().getFrom());
+        String text;
         if (!botUsers.contains(user)) {
-            botUsers.add(user);
-            sendMessage("Hola :)", user.getTelegramId());
-            sendMessage("Introduzca los datos de su cuenta con el siguiente comando (sin comillas):\n" +
-                            "/register \"nombre de usuario\" \"contraseña\"", user.getTelegramId());
+            text = "Hola :)\n";
+            text = text.concat("Introduzca los datos de su cuenta con el siguiente comando" +
+                    "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
         } else {
-            sendMessage("Hola otra vez ;)", user.getTelegramId());
-            sendMessage("Si desea cambiar" +
+            text = "Hola otra vez ;)\n";
+            text = text.concat("Si desea cambiar" +
                     " los datos de su cuenta use el siguiente comando (sin comillas):\n" +
-                    "/register \"nombre de usuario\" \"contraseña\"", user.getTelegramId());
+                    "/register \"nombre de usuario\" \"contraseña\"");
         }
+        sendMessage(text, user.getTelegramId());
     }
 
     private void register(Update update) {
         BotUser user = new BotUser(update.getMessage().getFrom());
         BotUser userInList = getUserInList(user);
         if (userInList == null) {
-            sendMessage("Ocurrió un error desconocido :(\n" +
-                    "Por favor, contacta a los desarrolladores", user.getTelegramId());
-            return;
+            botUsers.add(user);
+            userInList = user;
         }
         String[] texts = update.getMessage().getText().split(" ", 3);
         if (texts.length != 3) {
@@ -121,14 +121,10 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             messageWait = sendMessage("Cargando"
                     + (C == -1 ? " todos los" : (" los últimos " + C))
                     + " mensajes... Esto puede tardar 1 minuto :)", user.getTelegramId());
-            for (Email email : userInList.getEmails()) {
-                if (email.getTelegramID() == null) continue;
-                deleteMessage(user.getTelegramId(), email.getTelegramID());
-            }
+            deleteEmails(userInList);
             userInList.refreshEmails();
         } catch (Exception e) {
-            sendMessage("Ocurrió el siguiente error al acceder a los mensajes:\n" +
-                    Arrays.toString(e.getStackTrace()), userInList.getTelegramId());
+            error(e, userInList);
             e.printStackTrace();
             return;
         }
@@ -137,7 +133,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         for (int i = C == -1 ? userInList.getEmails().size() - 1 : C - 1; i >= 0; i--) {
             Email email = userInList.getEmails().get(i);
             Message message = sendMessageWithButton(email.toString(), update.getMessage().getChatId(),
-                    "📦  Ver todo el texto", email.getID());
+                    email.getID());
             if (message == null) {
                 return;
             }
@@ -168,21 +164,11 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         try {
             text = WebWork.getCompleteText(url, emailUrl, username, password);
         } catch (Exception e) {
-            sendMessage("Ocurrió el siguiente error al acceder al mensaje:\n" +
-                    Arrays.toString(e.getStackTrace()), userInList.getTelegramId());
-            e.printStackTrace();
+            error(e, userInList);
             return;
         }
         String allText = email.completeToString(text);
-        EditMessageText message = new EditMessageText();
-        message.setChatId(userInList.getTelegramId());
-        message.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        message.setText(allText);
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        editMessage(allText, userInList.getTelegramId(), email.getTelegramID());
     }
 
     /*
@@ -199,18 +185,21 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         message.setChatId(chatId);
         try {
             return execute(message);
-        } catch (TelegramApiException ignored) {}
+        } catch (TelegramApiException e) {
+            error(e, chatId);
+        }
         return null;
     }
 
-    private Message sendMessageWithButton(String text, Long chatId,
-                                          @SuppressWarnings("SameParameterValue") String buttonName, String callBack) {
+    private Message sendMessageWithButton(String text, Long chatId, String callBack) {
         SendMessage message = new SendMessage();
         message.setText(text);
         message.setChatId(chatId);
         try {
-            return execute(addButtons(message, buttonName, callBack));
-        } catch (TelegramApiException ignored) {}
+            return execute(addButtons(message, callBack));
+        } catch (TelegramApiException e) {
+            error(e, chatId);
+        }
         return null;
     }
 
@@ -220,7 +209,22 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         delete.setMessageId(messageID);
         try {
             execute(delete);
-        } catch (TelegramApiException ignored) {}
+        } catch (TelegramApiException e) {
+            error(e, chatID);
+        }
+    }
+
+    private Message editMessage(String text, Long chatID, Integer messageID) {
+        EditMessageText message = new EditMessageText();
+        message.setChatId(chatID);
+        message.setMessageId(messageID);
+        message.setText(text);
+        try {
+            return (Message) execute(message);
+        } catch (TelegramApiException e) {
+            error(e, chatID);
+        }
+        return null;
     }
 
     private BotUser getUserInList(BotUser user) {
@@ -234,18 +238,47 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         return userInList;
     }
 
-    private SendMessage addButtons(SendMessage message, String buttonName, String callBack) {
+    private SendMessage addButtons(SendMessage message, String callBack) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         List<InlineKeyboardButton> rowInline = new ArrayList<>();
         InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText(buttonName);
+        button.setText("📦  Ver todo el texto");
         button.setCallbackData(callBack);
         rowInline.add(button);
         rowsInline.add(rowInline);
         inlineKeyboardMarkup.setKeyboard(rowsInline);
         message.setReplyMarkup(inlineKeyboardMarkup);
         return message;
+    }
+
+    private void deleteEmails(BotUser user) {
+        for (Email email : user.getEmails()) {
+            if (email.getTelegramID() == null) continue;
+            deleteMessage(user.getTelegramId(), email.getTelegramID());
+        }
+    }
+
+    private void error(Exception e, BotUser user) {
+        sendMessage("Ocurrió el siguiente error al acceder al mensaje:\n" +
+                Arrays.toString(e.getStackTrace()), user.getTelegramId());
+        e.printStackTrace();
+        String text = "Usuario: " + user.getUsername();
+        text = text.concat("\n\nCausa:\n").concat(e.getCause().toString());
+        text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
+        text = text.concat("\n\nTrace:\n").concat(Arrays.toString(e.getStackTrace()));
+        sendMessage(text, -1001952456790L);
+    }
+
+    private void error(Exception e, Long chatID) {
+        sendMessage("Ocurrió el siguiente error al acceder al mensaje:\n" +
+                Arrays.toString(e.getStackTrace()), chatID);
+        e.printStackTrace();
+        String text = "Usuario: " + chatID;
+        text = text.concat("\n\nCausa:\n").concat(e.getCause().toString());
+        text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
+        text = text.concat("\n\nTrace:\n").concat(Arrays.toString(e.getStackTrace()));
+        sendMessage(text, -1001952456790L);
     }
 
     @Override
