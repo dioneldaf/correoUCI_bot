@@ -4,9 +4,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class BotUser {
+public class BotUser implements Serializable {
     private final String userType;
     private final Long telegramId;
     private String username;

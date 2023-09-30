@@ -4,9 +4,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlImage;
 import com.gargoylesoftware.htmlunit.html.HtmlTableCell;
 import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Email {
+public class Email implements Serializable {
     private boolean read;
     private String sender;
     private String topic;

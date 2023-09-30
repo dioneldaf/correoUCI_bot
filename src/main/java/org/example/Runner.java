@@ -7,18 +7,19 @@ public class Runner extends JFrame {
     private final Bot bot;
     public Runner(Bot bot) {
         super("CorreoUCI_bot");
-        setSize(200, 400);
+        setSize(200, 150);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setLayout(new FlowLayout());
         this.bot = bot;
 
         JLabel label = new JLabel("Bot Running...");
-        label.setFont(new Font("CaskaydiaCove Nerd Font", Font.BOLD, 20));
+        label.setFont(new Font("Ink Free", Font.PLAIN, 20));
+        label.setHorizontalAlignment(JLabel.CENTER);
         JButton button = new JButton("STOP");
-        button.setFont(new Font("Fira Code", Font.BOLD, 20));
-        getContentPane().add(label, BorderLayout.CENTER);
-        getContentPane().add(button, BorderLayout.SOUTH);
+        button.setFont(new Font("Ink Free", Font.PLAIN, 20));
+        getContentPane().add(label);
+        getContentPane().add(button);
 
         button.addActionListener(k -> dispose());
 
