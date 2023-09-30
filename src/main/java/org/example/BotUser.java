@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class BotUser implements Serializable {
-    private final String userType;
+    private String userType;
     private final Long telegramId;
     private String username;
     private String password;
@@ -16,9 +16,9 @@ public class BotUser implements Serializable {
     private Message lastNormalMessage;
 
     public BotUser(User user) {
-        this.userType = Const.STUDENTS_URL;
         this.telegramId = user.getId();
         this.emails = new ArrayList<>();
+        this.userType = null;
         this.username = null;
         this.password = null;
         this.lastNormalMessage = null;
@@ -26,6 +26,10 @@ public class BotUser implements Serializable {
 
     public String getUserType() {
         return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 
     public Long getTelegramId() {
