@@ -13,6 +13,7 @@ target/
 *.ipr
 .env
 out/
+src/main/java/org/example/data.cub
 
 ### Eclipse ###
 .apt_generated

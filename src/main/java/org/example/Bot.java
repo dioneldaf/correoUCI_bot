@@ -6,13 +6,21 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.ArrayList;
 
 public class Bot extends TelegramLongPollingBot {
-    private final ArrayList<BotUser> botUsers;
+    private ArrayList<BotUser> botUsers;
     private final String botToken;
 
     public Bot(String botToken) {
         super(botToken);
-        this.botUsers = new ArrayList<>();
         this.botToken = botToken;
+        try {
+            this.botUsers = Helper.loadBin();
+        } catch (Exception e) {
+            this.botUsers = new ArrayList<>();
+        }
+    }
+
+    public ArrayList<BotUser> getBotUsers() {
+        return botUsers;
     }
 
     @Override

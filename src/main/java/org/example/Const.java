@@ -11,4 +11,6 @@ public class Const {
     public static final String NEXT_PAGE = "ir a la siguiente página";
     public static final String READ_MESSAGE = "Mensaje leído";
     public static final String HAS_ADJUNCT = "Fichero adjunto";
+    public static final Long EXC_CHANNEL_ID = Long.valueOf(Helper.getEnv("EXC_CHANNEL_ID"));
+    public static final String PATH = Helper.getEnv("PATH");
 }

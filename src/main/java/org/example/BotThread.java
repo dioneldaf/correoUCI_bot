@@ -32,13 +32,13 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
+            deleteMessage(update.getMessage().getFrom().getId(), update.getMessage().getMessageId());
             if (update.getMessage().hasText()) {
                 String message = update.getMessage().getText();
                 if (message.startsWith("/start")) start(update);
                 else if (message.startsWith("/register")) register(update);
                 else if (message.startsWith("/emails")) emails(update);
             }
-            deleteMessage(update.getMessage().getFrom().getId(), update.getMessage().getMessageId());
             return;
         }
         if (update.hasCallbackQuery()) {
@@ -48,8 +48,11 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
 
     private void start(Update update) {
         BotUser user = new BotUser(update.getMessage().getFrom());
+        BotUser userInList = getUserInList(user);
         String text;
-        if (!botUsers.contains(user)) {
+        if (userInList == null) {
+            botUsers.add(user);
+            userInList = user;
             text = "Hola :)\n";
             text = text.concat("Introduzca los datos de su cuenta con el siguiente comando" +
                     "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
@@ -59,7 +62,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
                     " los datos de su cuenta use el siguiente comando (sin comillas):\n" +
                     "/register \"nombre de usuario\" \"contraseña\"");
         }
-        sendMessage(text, user.getTelegramId());
+        sendMessage(text, userInList);
     }
 
     private void register(Update update) {
@@ -71,7 +74,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         }
         String[] texts = update.getMessage().getText().split(" ", 3);
         if (texts.length != 3) {
-            sendMessage("Parámetros inválidos", userInList.getTelegramId());
+            sendMessage("Parámetros inválidos", userInList);
             return;
         }
         userInList.setUsername(texts[1]);
@@ -81,28 +84,29 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
                 Para ver la información de tus correos usa el siguiente comando (sin comillas):
                 /emails "C"
                 
-                Sustituye "C" por la cantidad de correos que deseas obtener (cronológicamente) o
-                escribe "All" en el lugar de "C" para obtener todos los correos.
-                """, userInList.getTelegramId());
+                """ +
+                "Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
+                "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.", userInList);
     }
 
     private void emails(Update update) {
         BotUser user = new BotUser(update.getMessage().getFrom());
         BotUser userInList = getUserInList(user);
         if (userInList == null) {
-            sendMessage("Al parecer no te has registrado aún", user.getTelegramId());
+            botUsers.add(user);
             return;
         }
         if (userInList.getUsername() == null || userInList.getPassword() == null) {
-            sendMessage("Usted aun no ha registrado sus datos de " +
-                    "inicio de sesión", userInList.getTelegramId());
-            sendMessage("Introduzca los datos de su cuenta con el siguiente comando (sin comillas): " +
-                    "/register \"nombre de usuario\" \"contraseña\"", user.getTelegramId());
+            String text = "Usted aun no ha registrado sus datos de " +
+                    "inicio de sesión\n";
+            text = text.concat("\nIntroduzca los datos de su cuenta con el siguiente comando (sin comillas): " +
+                    "/register \"nombre de usuario\" \"contraseña\"");
+            sendMessage(text, userInList);
             return;
         }
         String[] texts = update.getMessage().getText().split(" ", 2);
         if (texts.length != 2) {
-            sendMessage("Parámetros inválidos", userInList.getTelegramId());
+            sendMessage("Parámetros inválidos", userInList);
             return;
         }
         int C;
@@ -111,32 +115,25 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             if (C <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
             if (!texts[1].toLowerCase().contains("all")) {
-                sendMessage("Parámetros inválidos", userInList.getTelegramId());
+                sendMessage("Parámetros inválidos", userInList);
                 return;
             }
             C = -1;
         }
-        Message messageWait;
         try {
-            messageWait = sendMessage("Cargando"
+            sendMessage("Cargando"
                     + (C == -1 ? " todos los" : (" los últimos " + C))
-                    + " mensajes... Esto puede tardar 1 minuto :)", user.getTelegramId());
-            deleteEmails(userInList);
+                    + " mensajes... Esto puede tardar 1 minuto :)", userInList);
             userInList.refreshEmails();
         } catch (Exception e) {
             error(e, userInList);
-            e.printStackTrace();
             return;
         }
-        //noinspection DataFlowIssue
-        deleteMessage(userInList.getTelegramId(), messageWait.getMessageId());
         for (int i = C == -1 ? userInList.getEmails().size() - 1 : C - 1; i >= 0; i--) {
             Email email = userInList.getEmails().get(i);
             Message message = sendMessageWithButton(email.toString(), update.getMessage().getChatId(),
                     email.getID());
-            if (message == null) {
-                return;
-            }
+            if (message == null) return;
             Integer telegramID = message.getMessageId();
             email.setTelegramID(telegramID);
         }
@@ -153,7 +150,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             }
         }
         if (email == null) {
-            sendMessage("No pudimos cargar el mensaje :(", userInList.getTelegramId());
+            sendMessage("No pudimos cargar el mensaje :(", userInList);
             return;
         }
         String url = userInList.getUserType();
@@ -178,6 +175,17 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
      *
      *
      */
+
+    private void sendMessage(String text, BotUser user) {
+        deleteEmails(user);
+        Message lastNormalMessage = user.getLastNormalMessage();
+        if (lastNormalMessage == null) {
+            lastNormalMessage = sendMessage(text, user.getTelegramId());
+            user.setLastNormalMessage(lastNormalMessage);
+        } else {
+            editMessage(text, user.getTelegramId(), user.getLastNormalMessage().getMessageId());
+        }
+    }
 
     private Message sendMessage(String text, Long chatId) {
         SendMessage message = new SendMessage();
@@ -214,17 +222,17 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         }
     }
 
-    private Message editMessage(String text, Long chatID, Integer messageID) {
+    private void editMessage(String text, Long chatID, Integer messageID) {
         EditMessageText message = new EditMessageText();
         message.setChatId(chatID);
         message.setMessageId(messageID);
         message.setText(text);
         try {
-            return (Message) execute(message);
+            execute(message);
         } catch (TelegramApiException e) {
+            if (e.getMessage().contains("message is not modified:")) return;
             error(e, chatID);
         }
-        return null;
     }
 
     private BotUser getUserInList(BotUser user) {
@@ -256,29 +264,26 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         for (Email email : user.getEmails()) {
             if (email.getTelegramID() == null) continue;
             deleteMessage(user.getTelegramId(), email.getTelegramID());
+            email.setTelegramID(null);
         }
     }
 
     private void error(Exception e, BotUser user) {
-        sendMessage("Ocurrió el siguiente error al acceder al mensaje:\n" +
+        sendMessage("Ocurrió el siguiente error:\n" +
                 Arrays.toString(e.getStackTrace()), user.getTelegramId());
-        e.printStackTrace();
         String text = "Usuario: " + user.getUsername();
-        text = text.concat("\n\nCausa:\n").concat(e.getCause().toString());
         text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
         text = text.concat("\n\nTrace:\n").concat(Arrays.toString(e.getStackTrace()));
-        sendMessage(text, -1001952456790L);
+        sendMessage(text, Const.EXC_CHANNEL_ID);
     }
 
     private void error(Exception e, Long chatID) {
-        sendMessage("Ocurrió el siguiente error al acceder al mensaje:\n" +
-                Arrays.toString(e.getStackTrace()), chatID);
-        e.printStackTrace();
+        sendMessage("Ocurrió el siguiente error:\n" +
+                e.getMessage(), chatID);
         String text = "Usuario: " + chatID;
-        text = text.concat("\n\nCausa:\n").concat(e.getCause().toString());
         text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
         text = text.concat("\n\nTrace:\n").concat(Arrays.toString(e.getStackTrace()));
-        sendMessage(text, -1001952456790L);
+        sendMessage(text, Const.EXC_CHANNEL_ID);
     }
 
     @Override
