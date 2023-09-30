@@ -165,7 +165,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             return;
         }
         String allText = email.completeToString(text);
-        editMessage(allText, userInList.getTelegramId(), email.getTelegramID());
+        editMessage(allText, userInList, email.getTelegramID());
     }
 
     /*
@@ -183,7 +183,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             lastNormalMessage = sendMessage(text, user.getTelegramId());
             user.setLastNormalMessage(lastNormalMessage);
         } else {
-            editMessage(text, user.getTelegramId(), user.getLastNormalMessage().getMessageId());
+            editMessage(text, user, user.getLastNormalMessage().getMessageId());
         }
     }
 
@@ -222,16 +222,21 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         }
     }
 
-    private void editMessage(String text, Long chatID, Integer messageID) {
+    private void editMessage(String text, BotUser user, Integer messageID) {
         EditMessageText message = new EditMessageText();
-        message.setChatId(chatID);
+        message.setChatId(user.getTelegramId());
         message.setMessageId(messageID);
         message.setText(text);
         try {
             execute(message);
         } catch (TelegramApiException e) {
             if (e.getMessage().contains("message is not modified:")) return;
-            error(e, chatID);
+            if (e.getMessage().contains("message to edit not found")) {
+                user.setLastNormalMessage(null);
+                sendMessage(text, user);
+                return;
+            }
+            error(e, user.getTelegramId());
         }
     }
 
