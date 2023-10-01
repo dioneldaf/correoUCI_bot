@@ -5,24 +5,28 @@ import com.gargoylesoftware.htmlunit.html.HtmlTableCell;
 import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class Email implements Serializable {
     private boolean read;
     private String sender;
     private String topic;
-    private String date;
+    private String stringDate;
     private boolean adjunct;
     private String preview;
     private String url;
     private String text;
     private final String ID;
     private Integer telegramID;
+    private final LocalDateTime date;
 
     public Email(HtmlTableRow htmlMessage, String ID) {
         parse(htmlMessage);
         this.ID = ID;
         this.telegramID = null;
+        this.text = null;
+        this.date = Helper.parseDate(stringDate);
     }
 
     private void parse(HtmlTableRow htmlMessage) {
@@ -31,7 +35,7 @@ public class Email implements Serializable {
         read = readImage.asXml().contains(Const.READ_MESSAGE);
         sender = cells.get(Const.THIRD_ELEMENT).asXml().split("<td>")[1].split("<br/>")[0].strip();
         topic = htmlMessage.getElementsByTagName("span").get(Const.FIRST_ELEMENT).asNormalizedText();
-        date = cells.get(Const.FOURTH_ELEMENT).asNormalizedText().strip();
+        stringDate = cells.get(Const.FOURTH_ELEMENT).asNormalizedText().strip();
         adjunct = cells.get(Const.FIFTH_ELEMENT).asXml().contains(Const.HAS_ADJUNCT);
         try {
             preview = cells.get(Const.THIRD_ELEMENT).asXml()
@@ -41,7 +45,6 @@ public class Email implements Serializable {
         }
         url = cells.get(Const.THIRD_ELEMENT).getElementsByTagName("a")
                 .get(Const.FIRST_ELEMENT).getAttribute("href");
-        text = null;
     }
 
     public String completeToString(String text) {
@@ -65,6 +68,10 @@ public class Email implements Serializable {
         this.telegramID = telegramID;
     }
 
+    public LocalDateTime getDate() {
+        return date;
+    }
+
     @Override
     public String toString() {
          return getInfo() + "📄  Texto:\n" + preview;
@@ -74,7 +81,7 @@ public class Email implements Serializable {
         return "👀  Leído: " + (read ? "✅" : "❌") + "\n" +
                 "👤  De: " + sender + "\n" +
                 "💬  Asunto: " + topic + "\n" +
-                "📅  Fecha: " + date + "\n" +
+                "📅  Fecha: " + stringDate + "\n" +
                 "🔗  Adjunto(s): " + (adjunct ? "✅" : "❌") + "\n\n";
     }
 }

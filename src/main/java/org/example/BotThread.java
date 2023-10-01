@@ -54,8 +54,11 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             botUsers.add(user);
             userInList = user;
             text = "Hola :)\n\n";
-            text = text.concat("🧐  Introduzca los datos de su cuenta con el siguiente comando " +
-                    "(sin comillas):\n" + "/register \"nombre de usuario\" \"contraseña\"");
+            text = text.concat("""
+                    🧐  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):
+                    /register "tipo de cuenta" "nombre de usuario" "contraseña"
+
+                    En tipo de cuenta escriba: (E) si es estudiante o (P) si es profesor.""");
         } else {
             text = "Hola otra vez ;)\n\n";
             text = text.concat("""
@@ -88,7 +91,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             sendMessage(text, userInList);
             return;
         }
-        userInList.setUserType(texts[1].equals("e") ? Const.STUDENTS_URL : Const.PROFESSORS_URL);
+        userInList.setUserType(texts[1].equalsIgnoreCase("e") ? Const.STUDENTS_URL : Const.PROFESSORS_URL);
         userInList.setUsername(texts[2]);
         userInList.setPassword(texts[3]);
         sendMessage("""

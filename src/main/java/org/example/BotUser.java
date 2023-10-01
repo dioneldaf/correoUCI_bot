@@ -5,6 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 public class BotUser implements Serializable {
@@ -14,6 +15,7 @@ public class BotUser implements Serializable {
     private String password;
     private ArrayList<Email> emails;
     private Message lastNormalMessage;
+    private LocalDateTime lastEmail;
 
     public BotUser(User user) {
         this.telegramId = user.getId();
@@ -22,6 +24,7 @@ public class BotUser implements Serializable {
         this.username = null;
         this.password = null;
         this.lastNormalMessage = null;
+        this.lastEmail = null;
     }
 
     public String getUserType() {
@@ -77,9 +80,24 @@ public class BotUser implements Serializable {
         }
     }
 
+    private boolean hasNewEmail() throws Exception {
+        refreshEmails();
+        if (lastEmail == null) {
+            if (!emails.isEmpty()) {
+                lastEmail = emails.get(Const.FIRST_ELEMENT).getDate();
+            }
+            return false;
+        }
+        if (lastEmail.isAfter(emails.get(Const.FIRST_ELEMENT).getDate())) {
+            lastEmail = emails.get(Const.FIRST_ELEMENT).getDate();
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean equals(Object o) {
-        BotUser botUser = (BotUser) o;
+        if (!(o instanceof BotUser botUser)) return false;
         return telegramId.equals(botUser.getTelegramId());
     }
 }
