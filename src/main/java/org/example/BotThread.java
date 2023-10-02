@@ -281,6 +281,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         for (BotUser botUser : botUsers) {
             if (botUser.equals(user)) {
                 userInList = botUser;
+                userInList.setSleep(25000);
                 break;
             }
         }

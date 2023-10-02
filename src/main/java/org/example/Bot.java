@@ -29,6 +29,20 @@ public class Bot extends TelegramLongPollingBot {
         botThread.start();
     }
 
+    public void notifier() {
+        while (true) {
+            for (BotUser user : botUsers) {
+                Thread notifierThread = new Thread(new BotNotifier(botToken, user));
+                notifierThread.start();
+            }
+            try {
+                Thread.sleep(botUsers.size() * 25000L);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     @Override
     public String getBotUsername() {
         return "correoUCI_bot";

@@ -16,10 +16,12 @@ public class BotUser implements Serializable {
     private ArrayList<Email> emails;
     private Message lastNormalMessage;
     private LocalDateTime lastEmail;
+    private long sleep;
 
     public BotUser(User user) {
         this.telegramId = user.getId();
         this.emails = new ArrayList<>();
+        this.sleep = 24000;
         this.userType = null;
         this.username = null;
         this.password = null;
@@ -71,6 +73,14 @@ public class BotUser implements Serializable {
         this.lastNormalMessage = lastNormalMessage;
     }
 
+    public long getSleep() {
+        return sleep;
+    }
+
+    public void setSleep(long sleep) {
+        this.sleep = sleep;
+    }
+
     public void refreshEmails() throws Exception {
         emails.clear();
         int i = 0;
@@ -80,19 +90,29 @@ public class BotUser implements Serializable {
         }
     }
 
-    private boolean hasNewEmail() throws Exception {
-        refreshEmails();
+    public Email hasNewEmail() {
+        if (userType == null || username == null || password == null) return null;
+        Email trueLastEmail;
+        try {
+            trueLastEmail = getLastEmail();
+        } catch (Exception e) {
+            return null;
+        }
+        System.out.println(trueLastEmail.getDate());
         if (lastEmail == null) {
-            if (!emails.isEmpty()) {
-                lastEmail = emails.get(Const.FIRST_ELEMENT).getDate();
-            }
-            return false;
+            lastEmail = trueLastEmail.getDate();
+            return null;
         }
-        if (lastEmail.isAfter(emails.get(Const.FIRST_ELEMENT).getDate())) {
-            lastEmail = emails.get(Const.FIRST_ELEMENT).getDate();
-            return true;
+        if (lastEmail.isBefore(trueLastEmail.getDate())) {
+            lastEmail = trueLastEmail.getDate();
+            return trueLastEmail;
         }
-        return false;
+        return null;
+    }
+
+    public Email getLastEmail() throws Exception {
+        return new Email(WebWork.getHtmlMessages(
+                WebWork.initSession(userType, username, password)).get(Const.FIRST_ELEMENT), "-1");
     }
 
     @Override

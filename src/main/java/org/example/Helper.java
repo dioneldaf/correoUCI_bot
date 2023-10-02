@@ -64,8 +64,10 @@ public class Helper {
             month = now.getMonthValue();
             day = now.getDayOfMonth();
             String[] texts = stringDate.split(" ");
-            hour = LocalTime.parse(texts[Const.FIRST_ELEMENT]);
-            if (texts[Const.SECOND_ELEMENT].equals("pm")) hour = hour.plusHours(12);
+            if (texts[Const.FIRST_ELEMENT].split(":")[0].length() == 1)
+                texts[Const.FIRST_ELEMENT] = "0".concat(texts[Const.FIRST_ELEMENT]);
+            hour = LocalTime.parse((texts[Const.FIRST_ELEMENT]));
+            if (texts[Const.SECOND_ELEMENT].equalsIgnoreCase("PM")) hour = hour.plusHours(12);
         }
         return LocalDateTime.of(LocalDate.of(year, month, day), hour);
     }
