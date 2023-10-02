@@ -38,12 +38,36 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
                 if (message.startsWith("/start")) start(update);
                 else if (message.startsWith("/register")) register(update);
                 else if (message.startsWith("/emails")) emails(update);
+                else if (message.startsWith("/policy")) policy(update);
             }
             return;
         }
         if (update.hasCallbackQuery()) {
             buttonPressed(update);
         }
+    }
+
+    private void policy(Update update) {
+        BotUser user = new BotUser(update.getMessage().getFrom());
+        BotUser userInList = getUserInList(user);
+        if (userInList == null) {
+            botUsers.add(user);
+            userInList = user;
+        }
+        sendMessage("🔰  Política de privacidad  🔰\n\n" +
+                "◾  Es necesario los datos de inicio de sesión pues es el único modo de acceder al buzón y " +
+                "enviar al usuario la información de los correos.\n" +
+                "◾  El bot accede a su buzón usando la técnica: \"Web Scraping\"\n" +
+                "◾  Los administradores del bot no ven ni usan los credenciales, solo son usados por el " +
+                "programa para acceder al buzón y prestar el servicio.\n" +
+                "◾  Los administradores del bot no ven los correos.\n" +
+                "◾  Este bot funciona con un software libre que se puede encontrar en:\n" +
+                "https://github.com/dioneldaf/correoUCI_bot.git\n" +
+                "◾  El bot se encuentra en fase Beta y no ha logrado desplegarse para que funcione 24 horas\n" +
+                "◾  Los administradores del bot se reservan el derecho de detener la ejecución del bot cuando " +
+                "se estime necesario.\n" +
+                "◾  Versión del bot: 0.1\n" +
+                "◾  Cantidad de usuarios actuales: " + botUsers.size() + "\n", userInList);
     }
 
     private void start(Update update) {
@@ -53,14 +77,14 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         if (userInList == null) {
             botUsers.add(user);
             userInList = user;
-            text = "Hola :)\n\n";
+            text = "Hola, " + update.getMessage().getFrom().getFirstName() + " :)\n\n";
             text = text.concat("""
                     🧐  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):
                     /register "tipo de cuenta" "nombre de usuario" "contraseña"
 
                     En tipo de cuenta escriba: (E) si es estudiante o (P) si es profesor.""");
         } else {
-            text = "Hola otra vez ;)\n\n";
+            text = "Hola otra vez, " + update.getMessage().getFrom().getFirstName() + " ;)\n\n";
             text = text.concat("""
                     ☝🤓  Si desea cambiar los datos de su cuenta use el siguiente comando (sin comillas):
                     /register "tipo de cuenta" "nombre de usuario" "contraseña"
@@ -114,22 +138,24 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             return;
         }
         if (userInList.getUsername() == null || userInList.getPassword() == null) {
-            String text = "🙄  Usted aun no ha registrado sus datos de " +
-                    "inicio de sesión\n";
-            text = text.concat("""
+            String text = """
+                    🙄  Usted aun no ha registrado sus datos de inicio de sesión
+                    
+                    ☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):
+                    /register "tipo de cuenta" "nombre de usuario" "contraseña"
 
-                    ☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas): /register "tipo de cuenta" "nombre de usuario" "contraseña"
-
-                    En tipo de cuenta escriba (E) si es estudiante o (P) si es profesor.""");
-            text = text.concat("\n\n🤔  Ejemplo:\n/register E luispg alf@321X*");
+                    En tipo de cuenta escriba (E) si es estudiante o (P) si es profesor.
+                    
+                    🤔  Ejemplo:
+                    /register E luispg alf@321X*""";
             sendMessage(text, userInList);
             return;
         }
         String[] texts = update.getMessage().getText().split(" ", 2);
         if (texts.length != 2) {
             String text = "🔴  Parámetros inválidos\n\n";
-            text = text.concat("🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) o " +
-                    "escribe \"All\" en el lugar de \"C\" para obtener todos los correos.\n");
+            text = text.concat("🔄  Sustituye \"C\" por la cantidad de correos que deseas obtener (cronológicamente) " +
+                    "o escribe \"All\" en el lugar de \"C\" para obtener todos los correos.\n");
             text = text.concat("\n🤔  Ejemplo:\n/emails 12");
             sendMessage(text, userInList);
             return;
@@ -155,7 +181,16 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         try {
             userInList.refreshEmails();
         } catch (IllegalArgumentException e) {
-            sendMessage("🔴  Credenciales inválidos", userInList);
+            sendMessage("""
+                    🔴  Credenciales inválidos
+                    
+                    ☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):
+                    /register "tipo de cuenta" "nombre de usuario" "contraseña"
+
+                    En tipo de cuenta escriba (E) si es estudiante o (P) si es profesor.
+                    
+                    🤔  Ejemplo:
+                    /register E luispg alf@321X*""", userInList);
             return;
         } catch (Exception e) {
             error(e, userInList);

@@ -98,7 +98,6 @@ public class BotUser implements Serializable {
         } catch (Exception e) {
             return null;
         }
-        System.out.println(trueLastEmail.getDate());
         if (lastEmail == null) {
             lastEmail = trueLastEmail.getDate();
             return null;
