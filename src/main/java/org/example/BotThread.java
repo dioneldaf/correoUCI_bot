@@ -181,9 +181,8 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         try {
             userInList.refreshEmails();
         } catch (IllegalArgumentException e) {
-            sendMessage("""
-                    🔴  Credenciales inválidos
-                    
+            sendMessage("🔴  El sitio dice: " + e.getMessage() + "\n\n" +
+                    """
                     ☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):
                     /register "tipo de cuenta" "nombre de usuario" "contraseña"
 
@@ -290,6 +289,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
             execute(delete);
         } catch (TelegramApiException e) {
             if (e.getMessage().contains("message to delete not found")) return;
+            if (e.getMessage().contains("message can't be deleted for everyone")) return;
             error(e, chatID);
         }
     }
