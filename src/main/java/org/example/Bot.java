@@ -36,7 +36,7 @@ public class Bot extends TelegramLongPollingBot {
                 notifierThread.start();
             }
             try {
-                Thread.sleep(botUsers.size() * 25000L);
+                Thread.sleep(60000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

@@ -289,6 +289,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         try {
             execute(delete);
         } catch (TelegramApiException e) {
+            if (e.getMessage().contains("message to delete not found")) return;
             error(e, chatID);
         }
     }
@@ -357,10 +358,19 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
     private void error(Exception e, Long chatID) {
         sendMessage("😵  Ocurrió el siguiente error:\n\n" +
                 e.getMessage(), chatID);
-        String text = "Usuario: " + chatID;
+        String text = "Usuario: " + getUserName(chatID);
         text = text.concat("\n\nMensaje:\n").concat(e.getMessage());
         text = text.concat("\n\nTrace:\n").concat(Arrays.toString(e.getStackTrace()));
         sendMessage(text, Const.EXC_CHANNEL_ID);
+    }
+
+    private String getUserName(Long chatID) {
+        for (BotUser user : botUsers) {
+            if (user.getTelegramId().equals(chatID)) {
+                return user.getUsername();
+            }
+        }
+        return "";
     }
 
     @Override

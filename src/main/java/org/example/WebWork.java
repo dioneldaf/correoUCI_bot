@@ -13,6 +13,7 @@ public class WebWork {
         client.getOptions().setCssEnabled(false);
         client.getOptions().setJavaScriptEnabled(false);
         HtmlPage loginPage = client.getPage(url);
+//        client.close();
 
         HtmlForm form = loginPage.getForms().get(Const.FIRST_ELEMENT);
         HtmlInput usernameInput = form.getInputByName("username");
@@ -22,11 +23,47 @@ public class WebWork {
 
         HtmlSelect selectInput = (HtmlSelect) loginPage.getElementById("client");
         selectInput.setSelectedIndex(Const.THIRD_ELEMENT);
-        HtmlSubmitInput submitButton = form.getFirstByXPath(
-                "//input[@class='ZLoginButton DwtButton']");
+        HtmlSubmitInput submitButton = form.getFirstByXPath("//input[@class='ZLoginButton DwtButton']");
         HtmlPage page = submitButton.click();
         if (page.getElementById("ZLoginErrorPanel") != null) throw new IllegalArgumentException();
+        page = changePreferences(page);
         return page;
+    }
+
+    private static HtmlPage changePreferences(HtmlPage page) throws IOException {
+        HtmlPage preferencesPage = page.getElementById("TAB_OPTIONS").click();
+        preferencesPage = searchForAnchor(preferencesPage);
+
+        HtmlSelect numberOfMessages = (HtmlSelect) preferencesPage.getElementById("itemsPP");
+        HtmlSelect group = (HtmlSelect) preferencesPage.getElementById("groupMailBy");
+        HtmlInput howHtml = (HtmlInput) preferencesPage.getElementById("viewHtml");
+        HtmlInput viewRight = (HtmlInput) preferencesPage.getElementById("viewRight");
+        HtmlInput preview = (HtmlInput) preferencesPage.getElementById("zimbraPrefShowFragments");
+        HtmlInput searchMode = (HtmlInput) preferencesPage.getElementById("zimbraPrefMailInitialSearch");
+
+        numberOfMessages.setSelectedIndex(Const.SECOND_ELEMENT);
+        group.setSelectedIndex(Const.SECOND_ELEMENT);
+        howHtml.setChecked(true);
+        viewRight.setChecked(true);
+        preview.setChecked(true);
+        searchMode.setValue("in:inbox");
+
+        HtmlInput save = (HtmlInput) preferencesPage.getElementById("SOPSEND");
+        preferencesPage = save.click();
+
+        return preferencesPage.getElementById("TAB_MAIL").click();
+    }
+
+    private static HtmlPage searchForAnchor(HtmlPage page) throws IOException {
+        DomNodeList<DomElement> anchors = page.getElementsByTagName("a");
+        for (DomElement element : anchors) {
+            HtmlAnchor anchor = (HtmlAnchor) element;
+            if (anchor.asXml().contains("id=")) continue;
+            if (anchor.asXml().contains("Correo")) {
+                return anchor.click();
+            }
+        }
+        throw new IOException("No se pudieron cambiar las preferencias");
     }
 
     public static ArrayList<HtmlTableRow> getHtmlMessages(HtmlPage page) throws IOException {
