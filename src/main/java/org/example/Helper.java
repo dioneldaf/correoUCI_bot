@@ -42,6 +42,7 @@ public class Helper {
     }
 
     public static LocalDateTime parseDate(String stringDate) {
+        System.out.println(stringDate);
         int year;
         int month;
         int day;
@@ -57,6 +58,13 @@ public class Helper {
             String[] texts = stringDate.split(" de ");
             month = monthToInt(texts[Const.SECOND_ELEMENT]);
             day = Integer.parseInt(texts[Const.FIRST_ELEMENT]);
+            hour = LocalTime.MIDNIGHT;
+        } else if (stringDate.split(" ").length == 2 && !stringDate.contains("AM") && !stringDate.contains("PM")) {
+            stringDate = stringDate.toLowerCase();
+            year = LocalDateTime.now().getYear();
+            String[] texts = stringDate.split(" ");
+            month = monthToInt(texts[Const.FIRST_ELEMENT]);
+            day = Integer.parseInt(texts[Const.SECOND_ELEMENT]);
             hour = LocalTime.MIDNIGHT;
         } else {
             LocalDateTime now = LocalDateTime.now();

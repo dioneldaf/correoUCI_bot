@@ -181,6 +181,7 @@ public class BotThread extends TelegramLongPollingBot implements Runnable {
         try {
             userInList.refreshEmails();
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
             sendMessage("🔴  El sitio dice: " + e.getMessage() + "\n\n" +
                     """
                     ☝🤓  Introduzca los datos de su cuenta con el siguiente comando (sin comillas):

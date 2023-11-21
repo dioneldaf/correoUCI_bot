@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WebWork {
-    public static HtmlPage initSession(String url, String username, String password) throws Exception {
+    public static ClientPage initSession(String url, String username, String password) throws Exception {
         WebClient client = new WebClient();
         client.getOptions().setCssEnabled(false);
         client.getOptions().setJavaScriptEnabled(false);
@@ -29,12 +29,12 @@ public class WebWork {
         HtmlDivision divError = (HtmlDivision) page.getElementById("ZLoginErrorPanel");
         if (divError != null) throw new IllegalArgumentException(divError.asNormalizedText());
         page = changePreferences(page);
-        return page;
+        return new ClientPage(client, page);
     }
 
     private static HtmlPage changePreferences(HtmlPage page) throws IOException {
         HtmlPage preferencesPage = page.getElementById("TAB_OPTIONS").click();
-        preferencesPage = searchForAnchor(preferencesPage);
+        preferencesPage = preferencesPage.getAnchorByHref("/h/options?selected=mail&prev=mail").click();
 
         HtmlSelect numberOfMessages = (HtmlSelect) preferencesPage.getElementById("itemsPP");
         HtmlSelect group = (HtmlSelect) preferencesPage.getElementById("groupMailBy");
@@ -68,7 +68,8 @@ public class WebWork {
         throw new IOException("No se pudieron cambiar las preferencias");
     }
 
-    public static ArrayList<HtmlTableRow> getHtmlMessages(HtmlPage page) throws IOException {
+    public static ArrayList<HtmlTableRow> getHtmlMessages(ClientPage clientPage) throws IOException {
+        HtmlPage page = clientPage.getPage();
         ArrayList<HtmlTableRow> htmlMessages = new ArrayList<>();
         while (true) {
             HtmlTableBody messList = (HtmlTableBody) page.getElementById("mess_list_tbody");
@@ -78,12 +79,14 @@ public class WebWork {
             if (!image.getAltAttribute().equals(Const.NEXT_PAGE)) break;
             page = ((DomElement) image).click();
         }
+        clientPage.getClient().close();
         return htmlMessages;
     }
 
     public static String getCompleteText(
             String url, String messageUrl, String username, String password) throws Exception {
-        HtmlPage page = initSession(url, username, password);
+        ClientPage clientPage = initSession(url, username, password);
+        HtmlPage page = clientPage.getPage();
         int listNumber = Integer.parseInt(messageUrl.split("&so=")[1].split("&sc=")[0]) % 25;
         int index = Integer.parseInt(messageUrl.split("si=")[1].split("&so")[0]);
         for (int i = 0; i < listNumber; i++) {
@@ -103,6 +106,7 @@ public class WebWork {
             text = text.substring(0, 3500);
             text = text.concat("\n...");
         }
+        clientPage.getClient().close();
         return text;
     }
 }

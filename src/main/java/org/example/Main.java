@@ -15,6 +15,6 @@ public class Main {
             throw new RuntimeException(e);
         }
         new Runner(bot);
-        bot.notifier();
+        //bot.notifier();
     }
 }
