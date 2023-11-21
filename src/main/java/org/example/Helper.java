@@ -42,7 +42,6 @@ public class Helper {
     }
 
     public static LocalDateTime parseDate(String stringDate) {
-        System.out.println(stringDate);
         int year;
         int month;
         int day;
